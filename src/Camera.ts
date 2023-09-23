@@ -9,20 +9,15 @@ class Camera {
   aspectRatio: number = 1;
   near: number = 0.1;
   far: number = 1000;
-  position: vec3 = vec3.create();
-  direction: vec3 = vec3.create();
-  target: vec3 = vec3.create();
-  up: vec3 = vec3.create();
 
-  constructor(position: vec3, target: vec3) {
+  constructor(position: vec3, target: vec3, up : vec3) {
     this.controls = CameraControls(document.getElementById('canvas'), {
       eye: position,
       center: target,
+      up: up,
     });
-    vec3.add(this.target, this.position, this.direction);
     mat4.lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
   }
-
   setAspectRatio(aspectRatio: number) {
     this.aspectRatio = aspectRatio;
   }
@@ -33,7 +28,6 @@ class Camera {
 
   update() {
     this.controls.tick();
-    vec3.add(this.target, this.position, this.direction);
     mat4.lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
   }
 };

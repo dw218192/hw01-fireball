@@ -1,4 +1,4 @@
-import {mat4, vec4} from 'gl-matrix';
+import {vec2, mat4, vec3, vec4} from 'gl-matrix';
 import Drawable from './Drawable';
 import Camera from '../../Camera';
 import {gl} from '../../globals';
@@ -22,10 +22,53 @@ class OpenGLRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   }
 
-  render(camera: Camera, prog: ShaderProgram, drawables: Array<Drawable>, time: number) {
-    prog.setEyeRefUp(camera.controls.eye, camera.controls.center, camera.controls.up);
-    prog.setTime(time);
-
+  render(drawables: Array<Drawable>, prog: ShaderProgram, data : [string, number|vec2|vec3|vec4|mat4][]) {
+    for (let d of data) {
+      const uniformName = d[0];
+      const uniformValue = d[1];
+      
+      if (typeof uniformValue === 'number') {
+          prog.setFloat(uniformName, uniformValue);
+      } else if (uniformValue instanceof Float32Array) {
+          switch (uniformValue.length) {
+              case 2:
+                  prog.setVec2(uniformName, uniformValue);
+                  break;
+              case 3:
+                  prog.setVec3(uniformName, uniformValue);
+                  break;
+              case 4:
+                  prog.setVec4(uniformName, uniformValue);
+                  break;
+              case 16:
+                  prog.setMat4(uniformName, uniformValue);
+                  break;
+              default:
+                  console.error(`unhandled uniform ${uniformName} of length ${uniformValue.length}`);
+                  break;
+          }
+      } else if (Array.isArray(uniformValue)) {
+        switch (uniformValue.length) {
+            case 2: // Assuming vec2 is represented as Array of length 2
+                prog.setVec2(uniformName, uniformValue);
+                break;
+            case 3: // Assuming vec3 is represented as Array of length 3
+                prog.setVec3(uniformName, uniformValue);
+                break;
+            case 4: // Assuming vec4 is represented as Array of length 4
+                prog.setVec4(uniformName, uniformValue);
+                break;
+            case 16: // Assuming mat4 is represented as Array of length 16
+                prog.setMat4(uniformName, uniformValue);
+                break;
+            default:
+                console.error(`unhandled uniform ${uniformName}`);
+                break;
+        }
+      } else {
+          console.error(`unhandled uniform ${uniformName}`);
+      }
+    }
     for (let drawable of drawables) {
       prog.draw(drawable);
     }

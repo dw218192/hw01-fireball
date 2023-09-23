@@ -2,16 +2,28 @@ import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import {gl} from '../../globals';
 
-var activeProgram: WebGLProgram = null;
+var activeProgram: WebGLProgram = -1;
 
 export class Shader {
   shader: WebGLShader;
 
-  constructor(type: number, source: string) {
-    this.shader = gl.createShader(type);
+  constructor(type: number, sources: Array<string>) {
+    let res = gl.createShader(type);
+    if(res === null) {
+      throw "Shader creation failed";
+    }
+
+    this.shader = res;
+    let source = '';
+  
+    for (const src of sources) {
+      // Read the contents of each file and append it to the source string
+      source += src + '\n';
+    }
+  
     gl.shaderSource(this.shader, source);
     gl.compileShader(this.shader);
-
+  
     if (!gl.getShaderParameter(this.shader, gl.COMPILE_STATUS)) {
       throw gl.getShaderInfoLog(this.shader);
     }
@@ -23,15 +35,21 @@ class ShaderProgram {
 
   attrPos: number;
   attrNor: number;
+  attrCol: number;
+  attrUV: number;
 
-  unifRef: WebGLUniformLocation;
-  unifEye: WebGLUniformLocation;
-  unifUp: WebGLUniformLocation;
-  unifDimensions: WebGLUniformLocation;
+  unifModel: WebGLUniformLocation;
+  unifModelInvTr: WebGLUniformLocation;
+  unifViewProj: WebGLUniformLocation;
+  unifColor: WebGLUniformLocation;
   unifTime: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
-    this.prog = gl.createProgram();
+    let res = gl.createProgram();
+    if (res === null) {
+      throw "ShaderProgram creation failed";
+    }
+    this.prog = res;
 
     for (let shader of shaders) {
       gl.attachShader(this.prog, shader.shader);
@@ -42,11 +60,9 @@ class ShaderProgram {
     }
 
     this.attrPos = gl.getAttribLocation(this.prog, "vs_Pos");
-    this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
-    this.unifRef   = gl.getUniformLocation(this.prog, "u_Ref");
-    this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
-    this.unifDimensions   = gl.getUniformLocation(this.prog, "u_Dimensions");
-    this.unifTime   = gl.getUniformLocation(this.prog, "u_Time");
+    this.attrNor = gl.getAttribLocation(this.prog, "vs_Nor");
+    this.attrCol = gl.getAttribLocation(this.prog, "vs_Col");
+    this.attrUV = gl.getAttribLocation(this.prog, "vs_UV");
   }
 
   use() {
@@ -56,30 +72,43 @@ class ShaderProgram {
     }
   }
 
-  setEyeRefUp(eye: vec3, ref: vec3, up: vec3) {
+  setMat4(name: string, mat: mat4) {
     this.use();
-    if(this.unifEye !== -1) {
-      gl.uniform3f(this.unifEye, eye[0], eye[1], eye[2]);
-    }
-    if(this.unifRef !== -1) {
-      gl.uniform3f(this.unifRef, ref[0], ref[1], ref[2]);
-    }
-    if(this.unifUp !== -1) {
-      gl.uniform3f(this.unifUp, up[0], up[1], up[2]);
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniformMatrix4fv(loc, false, mat);
     }
   }
 
-  setDimensions(width: number, height: number) {
+  setVec4(name: string, vec: vec4) {
     this.use();
-    if(this.unifDimensions !== -1) {
-      gl.uniform2f(this.unifDimensions, width, height);
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniform4fv(loc, vec);
     }
   }
 
-  setTime(t: number) {
+  setVec3(name: string, vec: vec3) {
     this.use();
-    if(this.unifTime !== -1) {
-      gl.uniform1f(this.unifTime, t);
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniform3fv(loc, vec);
+    }
+  }
+  
+  setVec2(name: string, vec: vec2) {
+    this.use();
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniform2fv(loc, vec);
+    }
+  }
+
+  setFloat(name: string, val: number) {
+    this.use();
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniform1f(loc, val);
     }
   }
 
@@ -91,10 +120,21 @@ class ShaderProgram {
       gl.vertexAttribPointer(this.attrPos, 4, gl.FLOAT, false, 0, 0);
     }
 
+    if (this.attrNor != -1 && d.bindNor()) {
+      gl.enableVertexAttribArray(this.attrNor);
+      gl.vertexAttribPointer(this.attrNor, 4, gl.FLOAT, false, 0, 0);
+    }
+
+    if (this.attrUV != -1 && d.bindUV()) {
+      gl.enableVertexAttribArray(this.attrUV);
+      gl.vertexAttribPointer(this.attrUV, 2, gl.FLOAT, false, 0, 0);
+    }
+
     d.bindIdx();
     gl.drawElements(d.drawMode(), d.elemCount(), gl.UNSIGNED_INT, 0);
 
     if (this.attrPos != -1) gl.disableVertexAttribArray(this.attrPos);
+    if (this.attrNor != -1) gl.disableVertexAttribArray(this.attrNor);
   }
 };
 
