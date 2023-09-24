@@ -90,6 +90,22 @@ function main() {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+
+  let header : string = '#version 300 es\nprecision highp float;\n' + 
+  require('./shaders/defines.glsl')
+  let pass1_prog = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-vert.glsl')]),
+    new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-frag.glsl')]),
+  ]);
+  let pass2_prog = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, [header, require('./shaders/fireball-vert-pass2.glsl')]),
+    new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-frag-pass2.glsl')]),
+  ]);
+  let noise_debug_prog = new ShaderProgram([
+      new Shader(gl.VERTEX_SHADER, [header, require('./shaders/noise-vert.glsl')]),
+      new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/noise-frag.glsl')]),
+  ]);
+
   // This function will be called every frame
   function tick(timeStamp : number) {
     // log
@@ -97,9 +113,6 @@ function main() {
     stats.begin();
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     renderer.clear();
-
-    let header : string = '#version 300 es\nprecision highp float;\n' + 
-      require('./shaders/defines.glsl')
 
     let t = timeStamp / 1000.0;
     let dt = (timeStamp - lastTime) / 1000.0;
@@ -109,10 +122,7 @@ function main() {
       model = mat4.rotateY(model, model, rotAngle * Math.PI / 180.0);
       renderer.render(
         [icosphere],
-        new ShaderProgram([
-          new Shader(gl.VERTEX_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-vert.glsl')]),
-          new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-frag.glsl')]),
-        ]),
+        pass1_prog,
         [
           ['u_Time', t],
           ['u_Model', model],
@@ -131,10 +141,7 @@ function main() {
       if (controls['Shell Pass']) {
         renderer.render(
           [square],
-          new ShaderProgram([
-            new Shader(gl.VERTEX_SHADER, [header, require('./shaders/fireball-vert-pass2.glsl')]),
-            new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/fireball-frag-pass2.glsl')]),
-          ]),
+          pass2_prog,
           [
             ['u_Time', t],
             ['u_Model', mat4.create()],
@@ -153,10 +160,7 @@ function main() {
     } else {
       renderer.render(
         [square],
-        new ShaderProgram([
-          new Shader(gl.VERTEX_SHADER, [header, require('./shaders/noise-vert.glsl')]),
-          new Shader(gl.FRAGMENT_SHADER, [header, require('./shaders/perlin.glsl'), require('./shaders/noise-frag.glsl')]),
-        ]),
+        noise_debug_prog,
         [['u_Time', t]],
       );
     }
