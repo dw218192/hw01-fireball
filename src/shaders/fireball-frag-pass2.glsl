@@ -41,11 +41,7 @@ vec4 rayMarch(vec3 ro, vec3 rd) {
 }
 
 void main() {
-    vec2 ndc = fs_UV * 2.0 - 1.0;
-    vec4 hndc = vec4(ndc, u_Near, 1.0);
-    vec4 hp = inverse(u_Proj * u_View * u_Model) * hndc;
-    vec3 p = hp.xyz / hp.w;
-    vec3 ro = u_CameraPos;
-    vec3 rd = normalize(p - ro); 
+    vec3 ro, rd;
+    get_ray(fs_UV, ro, rd);
     out_Color = volumeMarch(ro, rd);
 }

@@ -17,6 +17,18 @@ uniform vec3 u_CameraPos;
 uniform float u_Far;
 uniform float u_Near;
 
+// misc
+uniform float u_NDCDepth;
+
+void get_ray(vec2 uv, out vec3 ro, out vec3 rd) {
+	vec2 ndc = uv * 2.0 - 1.0;
+	vec4 hndc = vec4(ndc, u_Near, 1.0);
+	vec4 hp = inverse(u_Proj * u_View * u_Model) * hndc;
+	vec3 p = hp.xyz / hp.w;
+	ro = u_CameraPos;
+	rd = normalize(p - ro); 
+}
+
 // toolbox functions
 float ease_in(float t) {
 	return t * t;

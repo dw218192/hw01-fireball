@@ -112,6 +112,14 @@ class ShaderProgram {
     }
   }
 
+  setTexture(name: string, tex: number) {
+    this.use();
+    let loc = gl.getUniformLocation(this.prog, name);
+    if (loc !== null) {
+      gl.uniform1i(loc, tex);
+    }
+  }
+
   draw(d: Drawable) {
     this.use();
 
