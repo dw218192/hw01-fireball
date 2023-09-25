@@ -1,5 +1,7 @@
 const path = require('path');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: path.resolve(__dirname, "src/main"),
@@ -26,6 +28,7 @@ module.exports = {
             loader: 'file-loader',
             options: {
               esModule: false,
+              publicPath: isProduction ? '/hw01-fireball/' : '/',
             }
           }
         ]
