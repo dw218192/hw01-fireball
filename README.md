@@ -3,6 +3,7 @@
 ## Overview
 ![Fireball](imgs/demo.gif)
 
+- Name: Tongwei Dai
 - [live demo](https://dw218192.github.io/hw01-fireball/) 
 - Note: the shaders are quite heavy and unoptimized, you can turn off the second pass if your computer is struggling to render the scene
 
